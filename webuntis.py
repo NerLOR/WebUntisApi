@@ -7,6 +7,15 @@ import json
 import datetime
 
 
+element_type_table = {
+    'klasse': 1,
+    'teacher': 2,
+    'subject': 3,
+    'room': 4,
+    'student': 5
+}
+
+
 def date_to_untis(date: datetime.date) -> int:
     return int(datetime.date.strftime(date, '%Y%m%d'))
 
@@ -274,10 +283,3 @@ class Session:
     def search(self):
         pass
 
-
-if __name__ == '__main__':
-    session = Session(server='urania.webuntis.com', school='htl3r')
-    session.authenticate(username='htl3r', password='htl3r', useragent='Necronda')
-
-    for obj in session.get_teachers():
-        print(obj)
