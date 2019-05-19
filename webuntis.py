@@ -270,7 +270,10 @@ class Session:
                 for klasse in self._request('getKlassen', params=params)]
 
     def get_timetable(self, start_date: datetime.date, end_date: datetime.date):
-        pass
+        return self._request('getTimetable', {
+            'startDate': date_to_untis(start_date),
+            'endDate': date_to_untis(end_date)
+        })
 
     def get_rooms(self) -> [Room]:
         return [Room(room['id'], room['name'], room['longName'])
