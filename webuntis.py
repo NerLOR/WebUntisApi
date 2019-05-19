@@ -123,8 +123,10 @@ class Teacher:
         self._uid = uid
         self._first_name = first_name.split(' ')[0]
         self._middle_name = ' '.join(first_name.split(' ')[1:])
+        if self._middle_name == '':
+            self._middle_name = None
         self._last_name = last_name
-        self._title = title
+        self._title = title if title != '' else None
 
     @property
     def id(self) -> int:
