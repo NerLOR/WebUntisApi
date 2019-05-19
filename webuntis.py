@@ -118,7 +118,7 @@ class Klasse:
 
 
 class Teacher:
-    def __init__(self, teacher_id: int, uid: str, first_name: str, last_name: str, title: str = ''):
+    def __init__(self, teacher_id: int, uid: str, first_name: str, last_name: str, title: str = None):
         self._id = teacher_id
         self._uid = uid
         self._first_name = first_name.split(' ')[0]
