@@ -118,8 +118,44 @@ class Klasse:
 
 
 class Teacher:
-    def __init__(self):
-        pass
+    def __init__(self, teacher_id: int, uid: str, first_name: str, last_name: str, title: str = ''):
+        self._id = teacher_id
+        self._uid = uid
+        self._first_name = first_name.split(' ')[0]
+        self._middle_name = ' '.join(first_name.split(' ')[1:])
+        self._last_name = last_name
+        self._title = title
+
+    @property
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def uid(self) -> str:
+        return self._uid
+
+    @property
+    def abbr(self) -> str:
+        return self._uid
+
+    @property
+    def first_name(self) -> str:
+        return self._first_name
+
+    @property
+    def middle_name(self) -> str:
+        return self._middle_name
+
+    @property
+    def last_name(self) -> str:
+        return self._last_name
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    def __str__(self) -> str:
+        return f'{{teacher#{self.id}:{self.uid}:{self.last_name}:{self.first_name}:{self.title}}}'
 
 
 class Room:
@@ -246,8 +282,10 @@ class Session:
         return [Subject(subject['id'], subject['name'], subject['longName'])
                 for subject in self._request('getSubjects')]
 
-    def get_teachers(self) -> [Dict[str, Any]]:
-        return self._request('getTeachers')
+    def get_teachers(self) -> [Teacher]:
+        return [Teacher(teacher['id'], teacher['name'], teacher['foreName'],
+                        teacher['longName'].capitalize(), teacher['title'])
+                for teacher in self._request('getTeachers')]
 
     def get_status_data(self) -> [Dict[str, Any]]:
         return self._request('getStatusData')
