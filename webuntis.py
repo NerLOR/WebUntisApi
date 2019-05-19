@@ -269,10 +269,13 @@ class Session:
                        klasse.get('teacher1', None), klasse.get('teacher2', None))
                 for klasse in self._request('getKlassen', params=params)]
 
-    def get_timetable(self, start_date: datetime.date, end_date: datetime.date):
+    def get_timetable(self, start_date: datetime.date, end_date: datetime.date,
+                      element_type: str, element_id: int) -> [Dict[str, Any]]:
         return self._request('getTimetable', {
             'startDate': date_to_untis(start_date),
-            'endDate': date_to_untis(end_date)
+            'endDate': date_to_untis(end_date),
+            'id': element_id,
+            'type': element_type_table[element_type]
         })
 
     def get_rooms(self) -> [Room]:
@@ -298,7 +301,8 @@ class Session:
     def get_last_import_time(self) -> [Dict[str, Any]]:
         return self._request('getLatestImportTime')
 
-    def get_substitutions(self, start_date: datetime.date, end_date: datetime.date, department_id: int = 0) -> [Dict[str, Any]]:
+    def get_substitutions(self, start_date: datetime.date, end_date: datetime.date,
+                          department_id: int = 0) -> [Dict[str, Any]]:
         return self._request('getSubstitutions')
 
     def get_timegrid_untis(self) -> [Dict[str, Any]]:
