@@ -5,6 +5,7 @@ import requests
 import time
 import json
 import datetime
+import base64
 
 
 element_type_table = {
@@ -51,6 +52,9 @@ class Schoolyear:
     def __str__(self) -> str:
         return f'{{schoolyear#{self.id}:{self.name}}}'
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Department:
     def __init__(self, department_id: int, nr: int, name: str):
@@ -72,6 +76,9 @@ class Department:
 
     def __str__(self) -> str:
         return f'{{department#{self.id}:{self.nr}:{self.name}}}'
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class Student:
@@ -116,6 +123,9 @@ class Klasse:
     def __str__(self) -> str:
         return f'{{klasse#{self.id}:{self.name}}}'
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Teacher:
     def __init__(self, teacher_id: int, uid: str, first_name: str, last_name: str, title: str = None):
@@ -159,6 +169,9 @@ class Teacher:
     def __str__(self) -> str:
         return f'{{teacher#{self.id}:{self.uid}:{self.last_name}:{self.first_name}:{self.title}}}'
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Room:
     def __init__(self, room_id: int, room_nr: str, name: str):
@@ -180,6 +193,9 @@ class Room:
 
     def __str__(self) -> str:
         return f'{{room#{self.id}:{self.nr}:{self.name}}}'
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class Subject:
@@ -203,16 +219,28 @@ class Subject:
     def __str__(self) -> str:
         return f'{{subject#{self.id}:{self.uid}:{self.name}}}'
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Session:
-    def __init__(self, server: str, school: str):
+    def __init__(self, server: str, school: str, useragent: str, session_id: str = None):
         self._session = requests.session()
         self._server = server
         self._school = school
         self._username = None
         self._password = None
-        self._useragent = None
+        self._useragent = useragent
         self._user = None
+        self._cookie = None
+        if session_id is not None:
+            self._cookie = requests.cookies.create_cookie(domain=server, path='/WebUntis', name='JSESSIONID',
+                                                          value=session_id)
+            self._session.cookies.set_cookie(self._cookie)
+            self._session.cookies.set_cookie(requests.cookies.create_cookie(
+                domain=server, path='/WebUntis/', name='schoolname',
+                value=f'"_{base64.b64encode(school.encode("ascii")).decode("ascii")}"'
+            ))
 
     def _request(self, method: str, params: Dict[str, Any] = None):
         headers = {
@@ -240,12 +268,11 @@ class Session:
                 raise NameError(f'{result["error"]["message"]}: {method}')
             return result.get('result', {})
 
-    def authenticate(self, username: str, password: str, useragent: str) -> bool:
+    def authenticate(self, username: str, password: str) -> bool:
         if self._user is not None:
             raise AssertionError('Already logged in')
         self._username = username
         self._password = password
-        self._useragent = useragent
         res = self._request('authenticate', {
             'user': self._username,
             'password': self._password,
@@ -253,6 +280,10 @@ class Session:
         })
         self._user = res
         return True
+
+    @property
+    def user(self):
+        return self._user
 
     def get_departments(self) -> [Department]:
         return [Department(department['id'], int(department['name']), department['longName'])
