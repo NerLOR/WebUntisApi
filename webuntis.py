@@ -232,28 +232,31 @@ class Session:
         self._password = None
         self._useragent = useragent
         self._user = None
+        self._session_id = session_id
         self._cookie = None
-        if session_id is not None:
+        if self.session_id is not None:
             self._cookie = requests.cookies.create_cookie(domain=server, path='/WebUntis', name='JSESSIONID',
-                                                          value=session_id)
+                                                          value=self.session_id)
             self._session.cookies.set_cookie(self._cookie)
             self._session.cookies.set_cookie(requests.cookies.create_cookie(
                 domain=server, path='/WebUntis/', name='schoolname',
                 value=f'"_{base64.b64encode(school.encode("ascii")).decode("ascii")}"'
             ))
+            print(self.get_subjects())
+            self._user = self.get_user()
 
-    def _request(self, method: str, params: Dict[str, Any] = None):
+    def _request(self, method: str, params: Any = None, path: str = '/WebUntis/jsonrpc.do') -> Any:
         headers = {
             'User-Agent': self._useragent,
             'Content-Type': 'application/json;charset=UTF-8'
         }
         request_body = {
-            'id': time.time(),
+            'id': int(time.time()),
             'method': method,
             'params': params if params is not None else {},
             'jsonrpc': '2.0'
         }
-        response = self._session.post(f'https://{self._server}/WebUntis/jsonrpc.do?school={self._school}',
+        response = self._session.post(f'https://{self._server}{path}?school={self.school}',
                                       data=json.dumps(request_body), headers=headers)
 
         if response.status_code != 200:
@@ -278,12 +281,48 @@ class Session:
             'password': self._password,
             'client': self._useragent
         })
-        self._user = res
+        self._session_id = res['sessionId']
+        self._user = self.get_user()
         return True
 
     @property
-    def user(self):
+    def school(self) -> str:
+        return self._school
+
+    @property
+    def server(self) -> str:
+        return self._server
+
+    @property
+    def session_id(self) -> str:
+        return self._session_id
+
+    @property
+    def user(self) -> Dict[str, Any]:
         return self._user
+
+    def set_schoolyear(self, schoolyear_id: int) -> bool:
+        return self._request('setSchoolyear', [schoolyear_id], '/WebUntis/jsonrpc_web/jsonCalendarService')
+
+    def get_user(self) -> Dict[str, Any]:
+        user = {'klassen': {}}
+        for schoolyear in self.get_schoolyears():
+            response = self._session.get(f'https://{self._server}/WebUntis/api/public/timetable/weekly/pageconfig?type=5&date={schoolyear.start_date}')
+            if response.status_code != 200:
+                raise ConnectionError('Invalid Response')
+            try:
+                result = json.loads(response.text)
+            except ValueError:
+                raise ValueError('Invalid JSON Response')
+            else:
+                obj = result['data']['elements'][0]
+                user['id'] = obj['id']
+                user['descriptor'] = obj['name']
+                user['firstName'] = obj['forename']
+                user['lastName'] = obj['longName']
+                user['title'] = obj['title']
+                user['klassen'][schoolyear.id] = obj['klasseId']
+        return user
 
     def get_departments(self) -> [Department]:
         return [Department(department['id'], int(department['name']), department['longName'])
